@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สุขสันต์วันเกิด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Charmonman:wght@400;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#2A1533;
+    --night-2:#43204F;
+    --gold:#FFC24B;
+    --punch:#FF5D8F;
+    --mint:#5BE0C0;
+    --paper:#FFF3E2;
+    --lit:4;
+    --display:"Charmonman", cursive;
+    --body:"IBM Plex Sans Thai", system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--body);
+    background:
+      radial-gradient(120% 80% at 50% 18%, var(--night-2) 0%, var(--night) 55%, #1B0D22 100%);
+    color:var(--paper);
+    min-height:100dvh;
+    display:grid;
+    place-items:center;
+    padding:24px 18px 40px;
+    overflow-x:hidden;
+  }
+  canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+
+  .stage{width:min(560px,100%);position:relative;z-index:2}
+
+  /* ---------- ฉากเค้ก ---------- */
+  .scene{position:relative;text-align:center;transition:opacity .5s ease, transform .5s ease}
+  .glow{
+    position:absolute;left:50%;top:44%;translate:-50% -50%;
+    width:min(520px,92vw);aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle, rgba(255,194,75,.34) 0%, rgba(255,194,75,.10) 42%, transparent 68%);
+    opacity:calc(.25 + var(--lit) * .1875);
+    transition:opacity .7s ease;
+    pointer-events:none;
+  }
+  .art{width:min(400px,88vw);height:auto;display:block;margin:0 auto;position:relative}
+  .flame{cursor:pointer;transform-origin:center bottom;transition:opacity .28s ease, transform .28s ease}
+  .flame .hit{fill:transparent}
+  .flame .fire{animation:flicker 1.1s ease-in-out infinite}
+  .flame:nth-of-type(2) .fire{animation-delay:-.35s}
+  .flame:nth-of-type(3) .fire{animation-delay:-.7s}
+  .flame:nth-of-type(4) .fire{animation-delay:-.15s}
+  .flame:hover .fire,.flame:focus-visible .fire{scale:1.14}
+  .flame:focus-visible{outline:2px dashed var(--mint);outline-offset:2px;border-radius:12px}
+  .flame.out{opacity:0;transform:translateY(-6px) scale(.4);pointer-events:none}
+  @keyframes flicker{
+    0%,100%{transform:scaleY(1) scaleX(1) translateY(0)}
+    50%{transform:scaleY(1.14) scaleX(.9) translateY(-2px)}
+  }
+  .smoke{opacity:0}
+  .smoke.puff{animation:puff 1.3s ease-out forwards}
+  @keyframes puff{
+    0%{opacity:.55;transform:translateY(0) scale(.5)}
+    100%{opacity:0;transform:translateY(-46px) scale(1.5)}
+  }
+
+  .hint{
+    margin-top:14px;font-size:.82rem;letter-spacing:.14em;
+    color:#E6C9F0;opacity:.85;
+  }
+  .hint b{color:var(--gold);font-weight:600}
+  .counter{display:block;margin-top:6px;font-size:.74rem;letter-spacing:.2em;opacity:.55}
+
+  .scene.done{opacity:0;transform:translateY(-18px) scale(.94);pointer-events:none}
+
+  /* ---------- การ์ด ---------- */
+  .card{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;
+    text-align:center;
+    opacity:0;transform:translateY(26px);pointer-events:none;
+    transition:opacity .6s ease .1s, transform .6s cubic-bezier(.2,.9,.3,1.1) .1s;
+  }
+  .card.show{opacity:1;transform:none;pointer-events:auto;position:relative}
+  .paper{
+    background:linear-gradient(170deg,#FFF7EC 0%, #FFE9CE 100%);
+    color:#3A1B2B;
+    width:100%;
+    border-radius:26px;
+    padding:34px 26px 30px;
+    box-shadow:0 26px 60px -22px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.18);
+    position:relative;
+    overflow:hidden;
+  }
+  .paper::after{
+    content:"";position:absolute;inset:10px;border-radius:18px;
+    border:1px dashed rgba(255,93,143,.35);pointer-events:none;
+  }
+  .eyebrow{
+    font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;
+    color:#B4527A;font-weight:600;
+  }
+  h1{
+    font-family:var(--display);
+    font-size:clamp(2.5rem,11vw,3.6rem);
+    line-height:1.15;font-weight:700;
+    color:#8E2A57;
+    margin:6px 0 2px;
+  }
+  h1 em{font-style:normal;color:var(--punch)}
+  .wishes{list-style:none;margin:22px 0 4px;display:grid;gap:14px;text-align:left}
+  .wishes li{
+    display:flex;gap:12px;align-items:flex-start;
+    font-size:clamp(1rem,4.2vw,1.1rem);line-height:1.75;
+    opacity:0;transform:translateY(10px);
+  }
+  .wishes li.lit{opacity:1;transform:none;transition:opacity .55s ease, transform .55s ease}
+  .mark{
+    flex:0 0 auto;width:22px;height:30px;margin-top:2px;
+  }
+  .signoff{
+    font-family:var(--display);font-weight:700;
+    font-size:clamp(1.7rem,7.5vw,2.2rem);
+    color:#8E2A57;margin-top:26px;
+    opacity:0;transform:translateY(10px);transition:opacity .6s ease, transform .6s ease;
+  }
+  .signoff.lit{opacity:1;transform:none}
+  .signoff span{color:var(--punch)}
+
+  .replay{
+    margin-top:20px;
+    background:none;border:1px solid rgba(255,243,226,.35);color:var(--paper);
+    font-family:var(--body);font-size:.82rem;letter-spacing:.12em;
+    padding:11px 20px;border-radius:999px;cursor:pointer;
+    transition:background .2s ease, border-color .2s ease;
+  }
+  .replay:hover{background:rgba(255,243,226,.12);border-color:var(--gold)}
+  .replay:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+
+<div class="stage">
+  <div class="glow" aria-hidden="true"></div>
+
+  <!-- ฉากที่ 1 : เป่าเทียน -->
+  <div class="scene" id="scene">
+    <svg class="art" viewBox="0 0 400 360" role="img" aria-label="เพื่อนผมสั้นยืนอยู่หลังเค้กวันเกิด">
+      <defs>
+        <radialGradient id="fireGrad" cx="50%" cy="65%" r="60%">
+          <stop offset="0%" stop-color="#FFF3C4"/>
+          <stop offset="55%" stop-color="#FFC24B"/>
+          <stop offset="100%" stop-color="#FF7A3D"/>
+        </radialGradient>
+        <linearGradient id="cakeGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFF7EC"/>
+          <stop offset="100%" stop-color="#F3D8B6"/>
+        </linearGradient>
+      </defs>
+
+      <!-- หมวกปาร์ตี้ -->
+      <path d="M170 66 L200 8 L230 66 Z" fill="#5BE0C0"/>
+      <path d="M180 47 L200 8 L206 20 L190 47 Z" fill="#FF5D8F" opacity=".85"/>
+      <circle cx="200" cy="8" r="8" fill="#FFC24B"/>
+
+      <!-- ผมด้านหลัง + ผมบ๊อบสั้น -->
+      <ellipse cx="200" cy="100" rx="47" ry="45" fill="#2E1B22"/>
+      <path d="M153 96 h94 v30 a12 12 0 0 1 -12 12 h-70 a12 12 0 0 1 -12 -12 z" fill="#2E1B22"/>
+      <!-- หน้า -->
+      <circle cx="200" cy="106" r="38" fill="#F7C9A6"/>
+      <!-- หน้าม้า -->
+      <path d="M163 98 C168 66 232 66 237 98 C218 84 182 84 163 98 Z" fill="#2E1B22"/>
+      <!-- ตายิ้ม -->
+      <path d="M181 112 q7 -9 14 0" stroke="#3A2129" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M205 112 q7 -9 14 0" stroke="#3A2129" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <!-- แก้ม -->
+      <ellipse cx="176" cy="124" rx="8" ry="5" fill="#FF8FB0" opacity=".65"/>
+      <ellipse cx="224" cy="124" rx="8" ry="5" fill="#FF8FB0" opacity=".65"/>
+      <!-- ปาก -->
+      <path d="M192 126 q8 10 16 0" stroke="#3A2129" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+      <!-- ตัว (ตัวเล็กกลมๆ) -->
+      <rect x="188" y="140" width="24" height="16" fill="#F7C9A6"/>
+      <ellipse cx="200" cy="212" rx="64" ry="54" fill="#FF5D8F"/>
+      <path d="M176 160 q24 20 48 0 v10 q-24 18 -48 0 z" fill="#FFF3E2" opacity=".55"/>
+      <circle cx="138" cy="216" r="17" fill="#F7C9A6"/>
+      <circle cx="262" cy="216" r="17" fill="#F7C9A6"/>
+
+      <!-- เค้ก -->
+      <ellipse cx="200" cy="322" rx="120" ry="14" fill="#43204F"/>
+      <rect x="112" y="248" width="176" height="66" rx="16" fill="url(#cakeGrad)"/>
+      <path d="M112 262 q14 16 28 0 q14 16 28 0 q14 16 28 0 q14 16 28 0 q14 16 28 0 q14 16 28 0 v-16 q0 -14 -14 -14 h-148 q-14 0 -14 14 z" fill="#FF5D8F"/>
+      <circle cx="140" cy="292" r="4" fill="#5BE0C0"/>
+      <circle cx="182" cy="300" r="4" fill="#FFC24B"/>
+      <circle cx="228" cy="290" r="4" fill="#5BE0C0"/>
+      <circle cx="262" cy="300" r="4" fill="#FFC24B"/>
+
+      <!-- เทียน 4 เล่ม -->
+      <g id="candles">
+        <rect x="145" y="212" width="9" height="40" rx="4" fill="#FFF3E2"/>
+        <rect x="145" y="222" width="9" height="7" fill="#FF5D8F"/>
+        <rect x="145" y="238" width="9" height="7" fill="#FF5D8F"/>
+
+        <rect x="181" y="212" width="9" height="40" rx="4" fill="#FFF3E2"/>
+        <rect x="181" y="222" width="9" height="7" fill="#5BE0C0"/>
+        <rect x="181" y="238" width="9" height="7" fill="#5BE0C0"/>
+
+        <rect x="217" y="212" width="9" height="40" rx="4" fill="#FFF3E2"/>
+        <rect x="217" y="222" width="9" height="7" fill="#FF5D8F"/>
+        <rect x="217" y="238" width="9" height="7" fill="#FF5D8F"/>
+
+        <rect x="253" y="212" width="9" height="40" rx="4" fill="#FFF3E2"/>
+        <rect x="253" y="222" width="9" height="7" fill="#5BE0C0"/>
+        <rect x="253" y="238" width="9" height="7" fill="#5BE0C0"/>
+      </g>
+
+      <!-- ควัน -->
+      <g id="smokes">
+        <circle class="smoke" cx="149.5" cy="200" r="5" fill="#E6C9F0"/>
+        <circle class="smoke" cx="185.5" cy="200" r="5" fill="#E6C9F0"/>
+        <circle class="smoke" cx="221.5" cy="200" r="5" fill="#E6C9F0"/>
+        <circle class="smoke" cx="257.5" cy="200" r="5" fill="#E6C9F0"/>
+      </g>
+
+      <!-- เปลวไฟ (กดได้) -->
+      <g class="flame" tabindex="0" role="button" aria-label="เป่าเทียนเล่มที่ 1" data-i="0">
+        <circle class="hit" cx="149.5" cy="198" r="22"/>
+        <ellipse class="fire" cx="149.5" cy="200" rx="7" ry="12" fill="url(#fireGrad)"/>
+      </g>
+      <g class="flame" tabindex="0" role="button" aria-label="เป่าเทียนเล่มที่ 2" data-i="1">
+        <circle class="hit" cx="185.5" cy="198" r="22"/>
+        <ellipse class="fire" cx="185.5" cy="200" rx="7" ry="12" fill="url(#fireGrad)"/>
+      </g>
+      <g class="flame" tabindex="0" role="button" aria-label="เป่าเทียนเล่มที่ 3" data-i="2">
+        <circle class="hit" cx="221.5" cy="198" r="22"/>
+        <ellipse class="fire" cx="221.5" cy="200" rx="7" ry="12" fill="url(#fireGrad)"/>
+      </g>
+      <g class="flame" tabindex="0" role="button" aria-label="เป่าเทียนเล่มที่ 4" data-i="3">
+        <circle class="hit" cx="257.5" cy="198" r="22"/>
+        <ellipse class="fire" cx="257.5" cy="200" rx="7" ry="12" fill="url(#fireGrad)"/>
+      </g>
+    </svg>
+
+    <p class="hint">เทียน <b>4</b> เล่ม = คำอวยพร <b>4</b> ข้อ — แตะเพื่อเป่า
+      <span class="counter" id="counter">เหลืออีก 4 เล่ม</span>
+    </p>
+  </div>
+
+  <!-- ฉากที่ 2 : การ์ด -->
+  <section class="card" id="card" aria-live="polite">
+    <div class="paper">
+      <p class="eyebrow">ถึงเพื่อนคนสำคัญ</p>
+      <h1>สุขสันต์<em>วันเกิด</em></h1>
+
+      <ul class="wishes">
+        <li>
+          <svg class="mark" viewBox="0 0 22 30" aria-hidden="true"><rect x="7" y="12" width="8" height="17" rx="4" fill="#FF5D8F"/><ellipse cx="11" cy="7" rx="5" ry="8" fill="#FFC24B"/></svg>
+          <span>เข้าสู่ช่วงอายุใหม่ ขอให้มีความสุขมากๆ</span>
+        </li>
+        <li>
+          <svg class="mark" viewBox="0 0 22 30" aria-hidden="true"><rect x="7" y="12" width="8" height="17" rx="4" fill="#5BE0C0"/><ellipse cx="11" cy="7" rx="5" ry="8" fill="#FFC24B"/></svg>
+          <span>อยากทำอะไรก็ได้ อยากซื้ออะไรก็ได้ซื้อ</span>
+        </li>
+        <li>
+          <svg class="mark" viewBox="0 0 22 30" aria-hidden="true"><rect x="7" y="12" width="8" height="17" rx="4" fill="#FF5D8F"/><ellipse cx="11" cy="7" rx="5" ry="8" fill="#FFC24B"/></svg>
+          <span>มีสุขภาพที่แข็งแรงมากๆ จะได้อยู่ด้วยกันไปนานๆ</span>
+        </li>
+        <li>
+          <svg class="mark" viewBox="0 0 22 30" aria-hidden="true"><rect x="7" y="12" width="8" height="17" rx="4" fill="#5BE0C0"/><ellipse cx="11" cy="7" rx="5" ry="8" fill="#FFC24B"/></svg>
+          <span>มีแรงค้นหาความสนุกของชีวิตไปด้วยกันไปยาวๆ เลย</span>
+        </li>
+      </ul>
+
+      <p class="signoff" id="signoff">รักมึงนะ<span>ทราย</span></p>
+    </div>
+    <button class="replay" id="replay">จุดเทียนใหม่อีกครั้ง</button>
+  </section>
+</div>
+
+<script>
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const root = document.documentElement;
+  const scene = document.getElementById('scene');
+  const card = document.getElementById('card');
+  const counter = document.getElementById('counter');
+  const signoff = document.getElementById('signoff');
+  const flames = [...document.querySelectorAll('.flame')];
+  const smokes = [...document.querySelectorAll('.smoke')];
+  const wishes = [...document.querySelectorAll('.wishes li')];
+  const total = flames.length;
+  let outCount = 0, done = false;
+
+  /* ---------- คอนเฟตติ ---------- */
+  const cv = document.getElementById('fx');
+  const ctx = cv.getContext('2d');
+  const COLORS = ['#FFC24B','#FF5D8F','#5BE0C0','#FFF3E2','#C084D8'];
+  let parts = [], raf = null;
+
+  function resize(){
+    const d = window.devicePixelRatio || 1;
+    cv.width = innerWidth * d; cv.height = innerHeight * d;
+    ctx.setTransform(d,0,0,d,0,0);
+  }
+  resize();
+  addEventListener('resize', resize);
+
+  function burst(x, y, n){
+    for(let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = 4 + Math.random()*11;
+      parts.push({
+        x, y,
+        vx: Math.cos(a)*sp,
+        vy: Math.sin(a)*sp - 6,
+        w: 5 + Math.random()*7,
+        h: 8 + Math.random()*8,
+        rot: Math.random()*Math.PI,
+        vr: (Math.random()-.5)*.3,
+        c: COLORS[(Math.random()*COLORS.length)|0],
+        life: 1,
+        round: Math.random() < .3
+      });
+    }
+    if(!raf) raf = requestAnimationFrame(loop);
+  }
+
+  function loop(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 60);
+    for(const p of parts){
+      p.vy += .22; p.vx *= .99; p.vy *= .995;
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      p.life -= .0035;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.fillStyle = p.c;
+      if(p.round){ ctx.beginPath(); ctx.arc(0,0,p.w/2,0,Math.PI*2); ctx.fill(); }
+      else ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    }
+    if(parts.length) raf = requestAnimationFrame(loop);
+    else { raf = null; ctx.clearRect(0,0,cv.width,cv.height); }
+  }
+
+  /* ---------- เป่าเทียน ---------- */
+  function blow(el){
+    if(el.classList.contains('out') || done) return;
+    el.classList.add('out');
+    const i = +el.dataset.i;
+    const s = smokes[i];
+    s.classList.remove('puff');
+    void s.offsetWidth;
+    s.classList.add('puff');
+
+    outCount++;
+    root.style.setProperty('--lit', total - outCount);
+    counter.textContent = outCount < total
+      ? 'เหลืออีก ' + (total - outCount) + ' เล่ม'
+      : 'ขอพรเรียบร้อย';
+
+    if(outCount === total) setTimeout(reveal, 620);
+  }
+
+  flames.forEach(f => {
+    f.addEventListener('click', () => blow(f));
+    f.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); blow(f); }
+    });
+  });
+
+  /* ---------- เปิดการ์ด ---------- */
+  function reveal(){
+    done = true;
+    scene.classList.add('done');
+    setTimeout(() => {
+      scene.style.display = 'none';
+      card.classList.add('show');
+      if(!reduce) burst(innerWidth/2, innerHeight*0.42, 130);
+      wishes.forEach((w,i) => setTimeout(() => w.classList.add('lit'), 380 + i*420));
+      setTimeout(() => {
+        signoff.classList.add('lit');
+        if(!reduce){
+          burst(innerWidth*0.2, innerHeight*0.55, 45);
+          burst(innerWidth*0.8, innerHeight*0.55, 45);
+        }
+      }, 380 + wishes.length*420 + 200);
+    }, reduce ? 0 : 480);
+  }
+
+  /* ---------- เริ่มใหม่ ---------- */
+  document.getElementById('replay').addEventListener('click', () => {
+    done = false; outCount = 0;
+    root.style.setProperty('--lit', total);
+    card.classList.remove('show');
+    wishes.forEach(w => w.classList.remove('lit'));
+    signoff.classList.remove('lit');
+    flames.forEach(f => f.classList.remove('out'));
+    smokes.forEach(s => s.classList.remove('puff'));
+    counter.textContent = 'เหลืออีก ' + total + ' เล่ม';
+    scene.style.display = '';
+    void scene.offsetWidth;
+    scene.classList.remove('done');
+    flames[0].focus({preventScroll:true});
+  });
+})();
+</script>
+</body>
+</html>
